@@ -4,4 +4,5 @@ Library contains reused components shared between microservices
 - Cloud profiles
 - JwtAuthenticationFilter
 - ExceptionHandler
+- Log4J + Logback
 - Common annotations and DTOs
