@@ -1,0 +1,2 @@
+services:
+  users-management: backend-users-management
