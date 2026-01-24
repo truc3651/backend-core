@@ -1,4 +1,4 @@
-package com.backend.core.exception;
+package com.backend.core.exceptions;
 
 public class ValidationException extends RuntimeException {
     public ValidationException(String message) {

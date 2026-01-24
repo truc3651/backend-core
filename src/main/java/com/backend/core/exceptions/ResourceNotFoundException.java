@@ -1,4 +1,4 @@
-package com.backend.core.exception;
+package com.backend.core.exceptions;
 
 public class ResourceNotFoundException extends RuntimeException {
     private static final String MSG_TEMPLATE = "%s resource with id %s does not exist.";

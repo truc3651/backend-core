@@ -1,4 +1,4 @@
-package com.backend.core.exception;
+package com.backend.core.exceptions;
 
 public class ForbiddenException extends RuntimeException {
     public ForbiddenException(String message) {

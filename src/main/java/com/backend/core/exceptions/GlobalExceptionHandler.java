@@ -1,8 +1,7 @@
-package com.backend.core.exception;
+package com.backend.core.exceptions;
 
-import com.backend.core.dto.ErrorResponseDto;
+import com.backend.core.dtos.ErrorResponseDto;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;

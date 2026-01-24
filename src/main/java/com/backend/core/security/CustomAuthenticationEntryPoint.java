@@ -1,6 +1,6 @@
 package com.backend.core.security;
 
-import com.backend.core.dto.ErrorDto;
+import com.backend.core.dtos.ErrorDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.http.HttpServletRequest;

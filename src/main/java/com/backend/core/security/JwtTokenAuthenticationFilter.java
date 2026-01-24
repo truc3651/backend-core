@@ -1,8 +1,8 @@
 package com.backend.core.security;
 
-import com.backend.core.dto.UserDto;
-import com.backend.core.dto.ValidateTokenRequestDto;
-import com.backend.core.dto.ValidateTokenResponseDto;
+import com.backend.core.dtos.UserDto;
+import com.backend.core.dtos.ValidateTokenRequestDto;
+import com.backend.core.dtos.ValidateTokenResponseDto;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

@@ -1,7 +1,7 @@
 package com.backend.core.security;
 
-import com.backend.core.dto.ValidateTokenRequestDto;
-import com.backend.core.dto.ValidateTokenResponseDto;
+import com.backend.core.dtos.ValidateTokenRequestDto;
+import com.backend.core.dtos.ValidateTokenResponseDto;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 
