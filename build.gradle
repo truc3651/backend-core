@@ -2,6 +2,8 @@ plugins {
     id 'java-library'
     id 'org.springframework.boot' version '3.4.1'
     id 'io.spring.dependency-management' version '1.1.7'
+    id "com.diffplug.spotless" version '6.25.0'
+    id 'maven-publish'
 }
 
 group = 'com.backend.core'
@@ -47,7 +49,6 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
-// Don't create an executable jar since this is a library
 bootJar {
     enabled = false
 }
@@ -59,4 +60,35 @@ jar {
 
 test {
     useJUnitPlatform()
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+
+            groupId = 'com.backend.core'
+            artifactId = 'backend-core'
+            version = '1.0.0'
+        }
+    }
+}
+
+spotless {
+    format 'misc', {
+        target '*.gradle', '.gitattributes', '.gitignore'
+        trimTrailingWhitespace()
+        indentWithSpaces(3)
+        endWithNewline()
+        setEncoding('utf-8')
+    }
+    java {
+        removeUnusedImports()
+        googleJavaFormat('1.15.0').reflowLongStrings().reorderImports(false)
+        indentWithSpaces(2)
+        trimTrailingWhitespace()
+        importOrder( '\\#', 'java.' , 'org.', 'com.')
+        endWithNewline()
+        toggleOffOn()
+    }
 }
