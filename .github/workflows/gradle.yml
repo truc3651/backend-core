@@ -54,8 +54,26 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew build
 
+      - name: Calculate version number
+        id: version
+        run: |
+          RUN_NUMBER=${{ github.run_number }}
+          
+          PATCH=$((RUN_NUMBER % 100))
+          MINOR=$(( (RUN_NUMBER / 100) % 100 ))
+          MAJOR=$((RUN_NUMBER / 10000))
+          
+          if [ $MAJOR -eq 0 ]; then
+            MAJOR=1
+          fi
+          
+          FULL_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          
+          echo "version=${FULL_VERSION}" >> $GITHUB_OUTPUT
+          echo "📦 Publishing version: ${FULL_VERSION}"
+
       - name: Publish to GitHub Packages
-        run: ./gradlew publish
+        run: ./gradlew publish -Pversion=${{ steps.version.outputs.version }}
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
           USERNAME: ${{ github.actor }}
