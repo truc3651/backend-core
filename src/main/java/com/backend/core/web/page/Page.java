@@ -14,10 +14,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class Page<T> {
-    private List<T> items;
-    private Long totalElements;
+  private List<T> items;
+  private Long totalElements;
 
-    public static <T> Page<T> empty() {
-        return new Page<>(emptyList(), 0L);
-    }
+  public static <T> Page<T> empty() {
+    return new Page<>(emptyList(), 0L);
+  }
 }

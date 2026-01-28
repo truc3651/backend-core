@@ -14,9 +14,9 @@ import jakarta.persistence.EntityManagerFactory;
 @EnableTransactionManagement
 @ConditionalOnClass(EntityManagerFactory.class)
 public class JpaConfig {
-    @Primary
-    @Bean
-    public PlatformTransactionManager transactionManager(EntityManagerFactory entityManagerFactory) {
-        return new JpaTransactionManager(entityManagerFactory);
-    }
+  @Primary
+  @Bean
+  public PlatformTransactionManager transactionManager(EntityManagerFactory entityManagerFactory) {
+    return new JpaTransactionManager(entityManagerFactory);
+  }
 }
