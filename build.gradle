@@ -89,18 +89,6 @@ publishing {
     }
 }
 
-def getVersionFromGit() {
-    try {
-        def tagVersion = 'git describe --tags --abbrev=0'.execute().text.trim()
-        // If tag is "v1.0.1", extract "1.0.1"
-        return tagVersion.startsWith('v') ? tagVersion.substring(1) : tagVersion
-    } catch (Exception e) {
-        return project.version
-    }
-}
-
-version = getVersionFromGit()
-
 spotless {
     format 'misc', {
         target '*.gradle', '.gitattributes', '.gitignore'
