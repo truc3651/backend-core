@@ -70,6 +70,17 @@ test {
 }
 
 publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+
+            pom {
+                name = 'Backend Core Library'
+                description = 'Shared core library for backend microservices'
+                url = 'https://github.com/truc3651/backend-core'
+            }
+        }
+    }
     repositories {
         maven {
             url = uri("https://maven.pkg.github.com/${System.getenv("GITHUB_REPOSITORY")}")
