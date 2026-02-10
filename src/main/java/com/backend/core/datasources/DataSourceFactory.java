@@ -24,22 +24,17 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DataSourceFactory {
   private final DBConnectionSettingsProvider dbConnectionSettingsProvider;
-  private final DBConnectionSettings dbConnectionSettings;
 
   public HikariDataSource getDataSource(
       String dataSourceType, DataSourceProperties dataSourceCommonProperties) {
+    DBConnectionSettings settings = dbConnectionSettingsProvider.provide();
     DataSourceProperties dataSourceProperties =
         initializeDataSourceProperties(
-            getConnectionSettings(), dataSourceCommonProperties, dataSourceType);
+                settings, dataSourceCommonProperties, dataSourceType);
     log.info("DataSource [{}] URL: {}", dataSourceType, dataSourceProperties.getUrl());
     log.info("DataSource [{}] Username: {}", dataSourceType, dataSourceProperties.getUsername());
 
     return dataSourceProperties.initializeDataSourceBuilder().type(HikariDataSource.class).build();
-  }
-
-  private DBConnectionSettings getConnectionSettings() {
-    return Optional.ofNullable(dbConnectionSettings)
-        .orElseGet(dbConnectionSettingsProvider::provide);
   }
 
   private DataSourceProperties initializeDataSourceProperties(

@@ -32,8 +32,8 @@ public class DBConnectionSettingsProviderImplLocaldev implements DBConnectionSet
     dbConnectionSettings.setMigrationPassword(localdevDatabaseSettings.getAuroraPassword());
 
     // Common
-    dbConnectionSettings.setDatabase(localdevDatabaseSettings.getDatabase());
-    dbConnectionSettings.setSchema(localdevDatabaseSettings.getSchema());
+    dbConnectionSettings.setDatabase(localdevDatabaseSettings.getAuroraDatabase());
+    dbConnectionSettings.setSchema(localdevDatabaseSettings.getAuroraSchema());
 
     return dbConnectionSettings;
   }

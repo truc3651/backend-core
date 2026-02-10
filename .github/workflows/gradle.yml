@@ -1,4 +1,4 @@
-name: Java CI with Gradle
+name: Java build
 
 on:
   push:
@@ -6,29 +6,9 @@ on:
   pull_request:
     branches: [ "master" ]
 
-env:
-  JAVA_VERSION: '17'
-  JAVA_DISTRIBUTION: 'corretto'
-
 jobs:
   build:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: ${{ env.JAVA_DISTRIBUTION }}
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582
-
-      - name: Build with Gradle Wrapper
-        run: ./gradlew build
+    uses: truc3651/github-workflows/.github/workflows/build.yml@master
 
   publish:
     # only runs when code is pushed to master
@@ -41,18 +21,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: ${{ env.JAVA_DISTRIBUTION }}
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582
-
-      - name: Build with Gradle
-        run: ./gradlew build
 
       - name: Calculate version number
         id: version
@@ -78,19 +46,3 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           USERNAME: ${{ github.actor }}
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  dependency-submission:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: ${{ env.JAVA_DISTRIBUTION }}
-
-      - name: Generate and submit dependency graph
-        uses: gradle/actions/dependency-submission@af1da67850ed9a4cedd57bfd976089dd991e2582

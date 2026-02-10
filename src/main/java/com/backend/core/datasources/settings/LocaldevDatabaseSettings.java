@@ -14,6 +14,6 @@ public class LocaldevDatabaseSettings {
   private String auroraUsername;
   private String auroraPassword;
 
-  private String database;
-  private String schema;
+  private String auroraDatabase;
+  private String auroraSchema;
 }
