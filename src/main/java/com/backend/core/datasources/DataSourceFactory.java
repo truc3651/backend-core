@@ -5,8 +5,6 @@ import static com.backend.core.datasources.DataSourceType.READER;
 import static com.backend.core.datasources.DataSourceType.WRITER;
 import static java.lang.String.format;
 
-import java.util.Optional;
-
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.stereotype.Component;
@@ -29,8 +27,7 @@ public class DataSourceFactory {
       String dataSourceType, DataSourceProperties dataSourceCommonProperties) {
     DBConnectionSettings settings = dbConnectionSettingsProvider.provide();
     DataSourceProperties dataSourceProperties =
-        initializeDataSourceProperties(
-                settings, dataSourceCommonProperties, dataSourceType);
+        initializeDataSourceProperties(settings, dataSourceCommonProperties, dataSourceType);
     log.info("DataSource [{}] URL: {}", dataSourceType, dataSourceProperties.getUrl());
     log.info("DataSource [{}] Username: {}", dataSourceType, dataSourceProperties.getUsername());
 
