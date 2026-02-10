@@ -10,6 +10,11 @@ on:
 jobs:
   build:
     uses: truc3651/github-workflows/.github/workflows/build.yml@master
+    permissions:
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
 
   publish:
     # only runs when code is pushed to master
