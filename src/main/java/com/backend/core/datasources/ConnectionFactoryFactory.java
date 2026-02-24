@@ -6,58 +6,57 @@ import static com.backend.core.datasources.DataSourceType.WRITER;
 import static java.lang.String.format;
 
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.stereotype.Component;
 
 import com.backend.core.datasources.settings.DBConnectionSettings;
 import com.backend.core.datasources.settings.DBConnectionSettingsProvider;
 import com.backend.core.exceptions.ConfigurationException;
-import com.zaxxer.hikari.HikariDataSource;
 
+import io.r2dbc.spi.ConnectionFactories;
+import io.r2dbc.spi.ConnectionFactory;
+import io.r2dbc.spi.ConnectionFactoryOptions;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class DataSourceFactory {
+public class ConnectionFactoryFactory {
   private final DBConnectionSettingsProvider dbConnectionSettingsProvider;
 
-  public HikariDataSource getDataSource(
-      String dataSourceType, DataSourceProperties dataSourceCommonProperties) {
+  public ConnectionFactory getConnectionFactory(String dataSourceType) {
     DBConnectionSettings settings = dbConnectionSettingsProvider.provide();
-    DataSourceProperties dataSourceProperties =
-        initializeDataSourceProperties(settings, dataSourceCommonProperties, dataSourceType);
-    log.info("DataSource [{}] URL: {}", dataSourceType, dataSourceProperties.getUrl());
-    log.info("DataSource [{}] Username: {}", dataSourceType, dataSourceProperties.getUsername());
+    DataSourcePropertiesHolder propertiesHolder =
+        initializeDataSourcePropertiesHolder(settings, dataSourceType);
 
-    return dataSourceProperties.initializeDataSourceBuilder().type(HikariDataSource.class).build();
-  }
-
-  private DataSourceProperties initializeDataSourceProperties(
-      DBConnectionSettings dbConnectionSettings,
-      DataSourceProperties dataSourceCommonProperties,
-      String dataSourceType) {
-
-    DataSourcePropertiesHolder dataSourcePropertiesHolder =
-        initializeDataSourcePropertiesHolder(
-            dbConnectionSettings, dataSourceCommonProperties, dataSourceType);
-    if (!isValidDataSourcePropertiesHolder(dataSourcePropertiesHolder)) {
+    if (!isValidDataSourcePropertiesHolder(propertiesHolder)) {
       throw new ConfigurationException(
-          format("Failed to initialize required DataSource [%s]", dataSourceType));
+          format("Failed to initialize required ConnectionFactory [%s]", dataSourceType));
     }
-    return dataSourcePropertiesHolder.toDataSourceProperties();
+
+    log.info("ConnectionFactory [{}] Host: {}", dataSourceType, propertiesHolder.getHost());
+    log.info("ConnectionFactory [{}] Database: {}", dataSourceType, propertiesHolder.getDatabase());
+    log.info("ConnectionFactory [{}] Username: {}", dataSourceType, propertiesHolder.getUsername());
+
+    ConnectionFactoryOptions options =
+        ConnectionFactoryOptions.builder()
+            .option(ConnectionFactoryOptions.DRIVER, "postgresql")
+            .option(ConnectionFactoryOptions.HOST, propertiesHolder.getHost())
+            .option(ConnectionFactoryOptions.PORT, Integer.parseInt(propertiesHolder.getPort()))
+            .option(ConnectionFactoryOptions.DATABASE, propertiesHolder.getDatabase())
+            .option(ConnectionFactoryOptions.USER, propertiesHolder.getUsername())
+            .option(ConnectionFactoryOptions.PASSWORD, propertiesHolder.getPassword())
+            .build();
+
+    return ConnectionFactories.get(options);
   }
 
   private DataSourcePropertiesHolder initializeDataSourcePropertiesHolder(
-      DBConnectionSettings dbConnectionSettings,
-      DataSourceProperties dataSourceCommonProperties,
-      String dataSourceType) {
+      DBConnectionSettings dbConnectionSettings, String dataSourceType) {
 
     DataSourcePropertiesHolder.DataSourcePropertiesHolderBuilder builder =
         DataSourcePropertiesHolder.builder()
             .dataSourceType(dataSourceType)
-            .dataSourceCommonProperties(dataSourceCommonProperties)
             .database(dbConnectionSettings.getDatabase())
             .schema(dbConnectionSettings.getSchema());
 
@@ -81,7 +80,7 @@ public class DataSourceFactory {
           .password(dbConnectionSettings.getMigrationPassword())
           .build();
       default -> throw new ConfigurationException(
-          format("Unsupported DataSource type supplied [%s]", dataSourceType));
+          format("Unsupported ConnectionFactory type supplied [%s]", dataSourceType));
     };
   }
 
@@ -90,27 +89,27 @@ public class DataSourceFactory {
     String dataSourceType = dataSourcePropertiesHolder.getDataSourceType();
 
     if (StringUtils.isBlank(dataSourcePropertiesHolder.getHost())) {
-      log.error("DataSource[{}] connection[host] is not defined", dataSourceType);
+      log.error("ConnectionFactory[{}] connection[host] is not defined", dataSourceType);
       return false;
     }
     if (StringUtils.isBlank(dataSourcePropertiesHolder.getPort())) {
-      log.error("DataSource[{}] connection[port] is not defined", dataSourceType);
+      log.error("ConnectionFactory[{}] connection[port] is not defined", dataSourceType);
       return false;
     }
     if (StringUtils.isBlank(dataSourcePropertiesHolder.getUsername())) {
-      log.error("DataSource[{}] connection[user] is not defined", dataSourceType);
+      log.error("ConnectionFactory[{}] connection[user] is not defined", dataSourceType);
       return false;
     }
     if (StringUtils.isBlank(dataSourcePropertiesHolder.getPassword())) {
-      log.error("DataSource[{}] connection[password] is not defined", dataSourceType);
+      log.error("ConnectionFactory[{}] connection[password] is not defined", dataSourceType);
       return false;
     }
     if (StringUtils.isBlank(dataSourcePropertiesHolder.getDatabase())) {
-      log.error("DataSource[{}] connection[database] is not defined", dataSourceType);
+      log.error("ConnectionFactory[{}] connection[database] is not defined", dataSourceType);
       return false;
     }
     if (StringUtils.isBlank(dataSourcePropertiesHolder.getSchema())) {
-      log.error("DataSource[{}] connection[schema] is not defined", dataSourceType);
+      log.error("ConnectionFactory[{}] connection[schema] is not defined", dataSourceType);
       return false;
     }
     return true;

@@ -1,17 +1,19 @@
 package com.backend.core.datasources.audit;
 
-import java.util.Optional;
-
-import org.springframework.data.domain.AuditorAware;
+import org.springframework.data.domain.ReactiveAuditorAware;
 import org.springframework.stereotype.Component;
 
 import com.backend.core.dtos.UserDto;
 import com.backend.core.security.JwtTokenAuthenticationHolder;
 
+import reactor.core.publisher.Mono;
+
 @Component
-public class AuthenticationAuditorAware implements AuditorAware<Long> {
+public class AuthenticationAuditorAware implements ReactiveAuditorAware<Long> {
   @Override
-  public Optional<Long> getCurrentAuditor() {
-    return JwtTokenAuthenticationHolder.findAuthenticatedUser().map(UserDto::getId);
+  public Mono<Long> getCurrentAuditor() {
+    return JwtTokenAuthenticationHolder.findAuthenticatedUser()
+        .map(UserDto::getId)
+        .defaultIfEmpty(0L);
   }
 }

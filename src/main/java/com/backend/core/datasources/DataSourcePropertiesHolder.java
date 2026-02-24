@@ -1,10 +1,6 @@
 package com.backend.core.datasources;
 
 import java.text.MessageFormat;
-import java.util.Optional;
-
-import org.springframework.beans.BeanUtils;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,13 +12,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DataSourcePropertiesHolder {
-  private static final String DATA_SOURCE_DRIVER = "org.postgresql.Driver";
-  private static final String DATA_SOURCE_URL_TEMPLATE =
+  private static final String R2DBC_URL_TEMPLATE = "r2dbc:postgresql://{0}:{1}/{2}?schema={3}";
+  private static final String JDBC_URL_TEMPLATE =
       "jdbc:postgresql://{0}:{1}/{2}?currentSchema={3}&stringtype=unspecified&reWriteBatchedInserts=true";
 
   private String dataSourceType;
-  //
-  private DataSourceProperties dataSourceCommonProperties;
   private String host;
   private String port;
   private String username;
@@ -30,18 +24,11 @@ public class DataSourcePropertiesHolder {
   private String database;
   private String schema;
 
-  public DataSourceProperties toDataSourceProperties() {
-    DataSourceProperties dataSourceProperties = new DataSourceProperties();
-    dataSourceCommonProperties =
-        Optional.ofNullable(dataSourceCommonProperties).orElseGet(DataSourceProperties::new);
+  public String getR2dbcUrl() {
+    return MessageFormat.format(R2DBC_URL_TEMPLATE, host, port, database, schema);
+  }
 
-    BeanUtils.copyProperties(dataSourceProperties, dataSourceCommonProperties);
-    dataSourceProperties.setUrl(
-        MessageFormat.format(DATA_SOURCE_URL_TEMPLATE, host, port, database, schema));
-    dataSourceProperties.setDriverClassName(DATA_SOURCE_DRIVER);
-    dataSourceProperties.setUsername(username);
-    dataSourceProperties.setPassword(password);
-
-    return dataSourceProperties;
+  public String getJdbcUrl() {
+    return MessageFormat.format(JDBC_URL_TEMPLATE, host, port, database, schema);
   }
 }

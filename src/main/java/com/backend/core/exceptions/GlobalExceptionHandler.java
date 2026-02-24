@@ -9,19 +9,17 @@ import java.util.Objects;
 import java.util.logging.Level;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.web.bind.support.WebExchangeBindException;
 
 import com.backend.core.dtos.ErrorResponseDto;
 
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 
 @RestControllerAdvice
@@ -34,75 +32,75 @@ public class GlobalExceptionHandler {
 
   @ResponseStatus(FORBIDDEN)
   @ExceptionHandler(ForbiddenException.class)
-  public ErrorResponseDto handle(ForbiddenException ex, HttpServletRequest request) {
-    writeLog(ex);
+  public ErrorResponseDto handle(ForbiddenException ex, ServerHttpRequest request) {
+    writeLog(ex, request);
     return ErrorResponseDto.builder()
         .code(HttpStatus.FORBIDDEN.value())
         .error(HttpStatus.FORBIDDEN.getReasonPhrase())
         .message(ex.getMessage())
-        .path(request.getRequestURI())
+        .path(request.getURI().getPath())
         .build();
   }
 
   @ResponseStatus(BAD_REQUEST)
   @ExceptionHandler(ValidationException.class)
-  public ErrorResponseDto handle(ValidationException ex, HttpServletRequest request) {
-    writeLog(ex);
+  public ErrorResponseDto handle(ValidationException ex, ServerHttpRequest request) {
+    writeLog(ex, request);
     return ErrorResponseDto.builder()
         .code(BAD_REQUEST.value())
         .error(BAD_REQUEST.getReasonPhrase())
         .message(ex.getMessage())
-        .path(request.getRequestURI())
+        .path(request.getURI().getPath())
         .build();
   }
 
   @ResponseStatus(UNPROCESSABLE_ENTITY)
   @ExceptionHandler(jakarta.validation.ValidationException.class)
   protected ErrorResponseDto handle(
-      jakarta.validation.ValidationException ex, HttpServletRequest request) {
-    writeLog(ex);
+      jakarta.validation.ValidationException ex, ServerHttpRequest request) {
+    writeLog(ex, request);
     return ErrorResponseDto.builder()
         .code(BAD_REQUEST.value())
         .error(BAD_REQUEST.getReasonPhrase())
         .message(ex.getMessage())
-        .path(request.getRequestURI())
+        .path(request.getURI().getPath())
         .build();
   }
 
   @ResponseStatus(NOT_FOUND)
   @ExceptionHandler(ResourceNotFoundException.class)
-  public ErrorResponseDto handle(ResourceNotFoundException ex, HttpServletRequest request) {
-    writeLog(ex);
+  public ErrorResponseDto handle(ResourceNotFoundException ex, ServerHttpRequest request) {
+    writeLog(ex, request);
     return ErrorResponseDto.builder()
         .code(HttpStatus.NOT_FOUND.value())
         .error(HttpStatus.NOT_FOUND.getReasonPhrase())
         .message(ex.getMessage())
-        .path(request.getRequestURI())
+        .path(request.getURI().getPath())
         .build();
   }
 
   @ResponseStatus(UNAUTHORIZED)
   @ExceptionHandler(AuthenticationException.class)
-  public ErrorResponseDto handle(AuthenticationException ex, HttpServletRequest request) {
-    writeLog(ex);
+  public ErrorResponseDto handle(AuthenticationException ex, ServerHttpRequest request) {
+    writeLog(ex, request);
     return ErrorResponseDto.builder()
         .code(HttpStatus.UNAUTHORIZED.value())
         .error(HttpStatus.UNAUTHORIZED.getReasonPhrase())
         .message(INVALID_CREDS_MESSAGE)
-        .path(request.getRequestURI())
+        .path(request.getURI().getPath())
         .build();
   }
 
   @ResponseStatus(UNPROCESSABLE_ENTITY)
-  @ExceptionHandler(MethodArgumentNotValidException.class)
-  public ErrorResponseDto handle(MethodArgumentNotValidException ex, HttpServletRequest request) {
-    writeLog(ex);
+  @ExceptionHandler(WebExchangeBindException.class)
+  public ErrorResponseDto handle(WebExchangeBindException ex, ServerHttpRequest request) {
+    writeLog(ex, request);
     ErrorResponseDto errorDto =
         ErrorResponseDto.builder()
             .code(UNPROCESSABLE_ENTITY.value())
             .error(UNPROCESSABLE_ENTITY.getReasonPhrase())
             .message(INVALIDATION_MESSAGE)
-            .path(request.getRequestURI())
+            .path(request.getURI().getPath())
             .build();
     errorDto.setDetails(
         ex.getBindingResult().getAllErrors().stream()
@@ -122,19 +120,19 @@ public class GlobalExceptionHandler {
 
   @ResponseStatus(INTERNAL_SERVER_ERROR)
   @ExceptionHandler(Exception.class)
-  public ErrorResponseDto handle(Exception ex, HttpServletRequest request) {
-    writeLog(ex);
+  public ErrorResponseDto handle(Exception ex, ServerHttpRequest request) {
+    writeLog(ex, request);
     return ErrorResponseDto.builder()
         .code(HttpStatus.INTERNAL_SERVER_ERROR.value())
         .error(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase())
         .message("Internal server error")
         .timestamp(OffsetDateTime.now())
-        .path(request.getRequestURI())
+        .path(request.getURI().getPath())
         .build();
   }
 
-  protected void writeLog(Throwable throwable) {
-    String errorMessage = getErrorLogMessage(throwable);
+  protected void writeLog(Throwable throwable, ServerHttpRequest request) {
+    String errorMessage = getErrorLogMessage(throwable, request);
     Level level = getErrorLevel(throwable);
 
     if (level == Level.INFO) {
@@ -176,13 +174,13 @@ public class GlobalExceptionHandler {
     }
   }
 
-  protected String getErrorLogMessage(Throwable throwable) {
-    HttpServletRequest request = getCurrentRequest();
+  protected String getErrorLogMessage(Throwable throwable, ServerHttpRequest request) {
     if (Objects.isNull(request)) {
       return String.format("API request failed: %s", throwable.getMessage());
     }
     return String.format(
-        "%s %s failed: %s", request.getMethod(), request.getRequestURI(), throwable.getMessage());
+        "%s %s failed: %s",
+        request.getMethod(), request.getURI().getPath(), throwable.getMessage());
   }
 
   protected Level getErrorLevel(Throwable throwable) {
@@ -193,15 +191,9 @@ public class GlobalExceptionHandler {
     }
     if (throwable instanceof ValidationException
         || throwable instanceof jakarta.validation.ValidationException
-        || throwable instanceof MethodArgumentNotValidException) {
+        || throwable instanceof WebExchangeBindException) {
       return Level.WARNING;
     }
     return Level.SEVERE;
-  }
-
-  private HttpServletRequest getCurrentRequest() {
-    ServletRequestAttributes attributes =
-        (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-    return Objects.nonNull(attributes) ? attributes.getRequest() : null;
   }
 }
