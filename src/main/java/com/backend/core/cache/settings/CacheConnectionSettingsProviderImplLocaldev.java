@@ -17,8 +17,10 @@ public class CacheConnectionSettingsProviderImplLocaldev
     CacheConnectionSettings settings = new CacheConnectionSettings();
     settings.setHost(localdevCacheSettings.getHost());
     settings.setPort(localdevCacheSettings.getPort());
-    settings.setPassword(null);
+    settings.setUsername(localdevCacheSettings.getUsername());
+    settings.setPassword(localdevCacheSettings.getPassword());
     settings.setTlsEnabled(false);
+    settings.setClusterMode(localdevCacheSettings.isClusterMode());
     return settings;
   }
 }

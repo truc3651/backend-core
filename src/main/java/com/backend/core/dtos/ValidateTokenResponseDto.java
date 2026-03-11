@@ -2,14 +2,13 @@ package com.backend.core.dtos;
 
 import java.util.Date;
 
+import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.experimental.SuperBuilder;
 
 @Data
-@SuperBuilder
-@EqualsAndHashCode(callSuper = true)
-public class ValidateTokenResponseDto extends UserDto {
+@Builder
+public class ValidateTokenResponseDto {
   private boolean valid;
   private Date expiresAt;
+  private UserDto user;
 }

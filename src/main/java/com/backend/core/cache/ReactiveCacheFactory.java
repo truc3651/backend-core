@@ -39,10 +39,8 @@ public class ReactiveCacheFactory {
     RedisStandaloneConfiguration redisConfig = new RedisStandaloneConfiguration();
     redisConfig.setHostName(settings.getHost());
     redisConfig.setPort(Integer.parseInt(settings.getPort()));
-
-    if (StringUtils.isNotBlank(settings.getPassword())) {
-      redisConfig.setPassword(RedisPassword.of(settings.getPassword()));
-    }
+    redisConfig.setUsername(settings.getUsername());
+    redisConfig.setPassword(RedisPassword.of(settings.getPassword()));
 
     LettuceClientConfiguration.LettuceClientConfigurationBuilder clientConfigBuilder =
         LettuceClientConfiguration.builder().commandTimeout(Duration.ofMillis(500));
@@ -71,6 +69,12 @@ public class ReactiveCacheFactory {
     }
     if (StringUtils.isBlank(settings.getPort())) {
       throw new ConfigurationException("Cache connection [port] is not defined");
+    }
+    if (StringUtils.isBlank(settings.getUsername())) {
+      throw new ConfigurationException("Cache connection [username] is not defined");
+    }
+    if (StringUtils.isBlank(settings.getPassword())) {
+      throw new ConfigurationException("Cache connection [password] is not defined");
     }
   }
 }

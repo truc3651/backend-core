@@ -16,7 +16,6 @@ import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 
-import com.backend.core.dtos.UserDto;
 import com.backend.core.dtos.ValidateTokenRequestDto;
 
 import lombok.RequiredArgsConstructor;
@@ -27,7 +26,6 @@ import reactor.core.publisher.Mono;
 @Component
 @RequiredArgsConstructor
 public class JwtTokenAuthenticationFilter implements WebFilter {
-  private static final String HEADER_AUTHORIZATION = HttpHeaders.AUTHORIZATION;
   private static final String BEARER = "Bearer ";
   private final SecuritySettings securitySettings;
   private final UserClient userClient;
@@ -40,8 +38,7 @@ public class JwtTokenAuthenticationFilter implements WebFilter {
       return chain.filter(exchange);
     }
 
-    String authHeader = exchange.getRequest().getHeaders().getFirst(HEADER_AUTHORIZATION);
-
+    String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
     if (Objects.isNull(authHeader) || !authHeader.startsWith(BEARER)) {
       return chain.filter(exchange);
     }
@@ -53,17 +50,14 @@ public class JwtTokenAuthenticationFilter implements WebFilter {
         .validateToken(validateTokenRequest)
         .flatMap(
             validationResult -> {
-              if (Objects.nonNull(validationResult)
-                  && validationResult.isValid()
-                  && validationResult.getId() != null) {
-                UserDto user = new UserDto(validationResult.getId(), validationResult.getEmail());
+              if (Objects.nonNull(validationResult) && validationResult.isValid()) {
                 UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(user, null, Collections.emptyList());
+                    new UsernamePasswordAuthenticationToken(
+                        validationResult.getUser(), null, Collections.emptyList());
                 return chain
                     .filter(exchange)
                     .contextWrite(ReactiveSecurityContextHolder.withAuthentication(authentication));
               }
-              // Returns Mono<Void> - another reactive publisher
               return chain.filter(exchange);
             })
         .onErrorResume(

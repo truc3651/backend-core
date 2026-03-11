@@ -11,4 +11,7 @@ import lombok.Data;
 public class LocaldevCacheSettings {
   private String host;
   private String port;
+  private String username;
+  private String password;
+  private boolean clusterMode;
 }

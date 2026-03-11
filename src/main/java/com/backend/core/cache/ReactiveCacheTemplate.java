@@ -21,8 +21,8 @@ public class ReactiveCacheTemplate<T> {
   private final Duration ttl;
   private final TypeReference<T> type;
 
-  public Mono<T> get(String id, Function<String, Mono<T>> dbFallback) {
-    String key = keyPrefix + id;
+  public Mono<T> get(Long id, Function<Long, Mono<T>> dbFallback) {
+    String key = getKey(id);
     return redis
         .opsForValue()
         .get(key)
@@ -30,31 +30,28 @@ public class ReactiveCacheTemplate<T> {
         .switchIfEmpty(
             Mono.defer(
                 () -> dbFallback.apply(id).flatMap(entity -> put(id, entity).thenReturn(entity))))
-        .onErrorResume(
-            e -> {
-              log.warn("Cache read failed for key={}, falling back to DB", key, e);
-              return dbFallback.apply(id);
-            });
+        .doOnError(e -> log.warn("Cache read failed for key={}, falling back to DB", key, e))
+        .onErrorResume(e -> dbFallback.apply(id));
   }
 
-  public Mono<Boolean> put(String id, T entity) {
-    String key = keyPrefix + id;
+  public Mono<Boolean> put(Long id, T entity) {
+    String key = getKey(id);
     return serialize(entity)
         .flatMap(json -> redis.opsForValue().set(key, json, ttl))
-        .onErrorResume(
-            e -> {
-              log.warn("Cache put failed for key={}", key, e);
-              return Mono.just(false);
-            });
+        .doOnError(e -> log.warn("Cache put failed for key={}", key, e))
+        .onErrorResume(e -> Mono.just(false));
   }
 
-  public Mono<Void> evict(String id) {
-    String key = keyPrefix + id;
+  public Mono<Void> evict(Long id) {
+    String key = getKey(id);
     return redis
         .delete(key)
         .doOnError(e -> log.error("Cache evict failed for key={}", key, e))
-        .onErrorResume(e -> Mono.just(0L))
         .then();
+  }
+
+  private String getKey(Long id) {
+    return keyPrefix + id;
   }
 
   private Mono<T> deserialize(String json) {

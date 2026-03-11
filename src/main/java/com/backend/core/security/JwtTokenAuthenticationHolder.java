@@ -1,6 +1,5 @@
 package com.backend.core.security;
 
-import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.core.context.SecurityContext;
@@ -18,11 +17,5 @@ public class JwtTokenAuthenticationHolder {
         .filter(Authentication::isAuthenticated)
         .map(Authentication::getPrincipal)
         .cast(UserDto.class);
-  }
-
-  public static Mono<UserDto> getAuthenticatedUser() {
-    return findAuthenticatedUser()
-        .switchIfEmpty(
-            Mono.error(new AuthenticationCredentialsNotFoundException("Not Authorized")));
   }
 }

@@ -49,10 +49,7 @@ public class CacheConnectionSettingsProviderImplAWSSecret
   @Override
   public CacheConnectionSettings provide() {
     try {
-      CacheConnectionSettings settings =
-          objectMapper.readValue(getSecretJson(), CacheConnectionSettings.class);
-      settings.setTlsEnabled(true);
-      return settings;
+      return objectMapper.readValue(getSecretJson(), CacheConnectionSettings.class);
     } catch (IOException e) {
       throw new AWSException(e);
     }
