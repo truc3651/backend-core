@@ -5,7 +5,9 @@ import java.time.Duration;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisClusterConfiguration;
 import org.springframework.data.redis.connection.RedisPassword;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
@@ -28,6 +30,7 @@ public class ReactiveCacheFactory {
   private final CacheConnectionSettingsProvider cacheConnectionSettingsProvider;
 
   @Bean
+  @Primary
   public ReactiveRedisConnectionFactory reactiveRedisConnectionFactory() {
     CacheConnectionSettings settings = cacheConnectionSettingsProvider.provide();
     validate(settings);
@@ -35,12 +38,7 @@ public class ReactiveCacheFactory {
     log.info("Cache connection — Host: {}", settings.getHost());
     log.info("Cache connection — Port: {}", settings.getPort());
     log.info("Cache connection — TLS: {}", settings.isTlsEnabled());
-
-    RedisStandaloneConfiguration redisConfig = new RedisStandaloneConfiguration();
-    redisConfig.setHostName(settings.getHost());
-    redisConfig.setPort(Integer.parseInt(settings.getPort()));
-    redisConfig.setUsername(settings.getUsername());
-    redisConfig.setPassword(RedisPassword.of(settings.getPassword()));
+    log.info("Cache connection — Cluster mode: {}", settings.isClusterMode());
 
     LettuceClientConfiguration.LettuceClientConfigurationBuilder clientConfigBuilder =
         LettuceClientConfiguration.builder().commandTimeout(Duration.ofMillis(500));
@@ -49,7 +47,21 @@ public class ReactiveCacheFactory {
       clientConfigBuilder.useSsl().disablePeerVerification();
     }
 
-    return new LettuceConnectionFactory(redisConfig, clientConfigBuilder.build());
+    if (settings.isClusterMode()) {
+      RedisClusterConfiguration clusterConfig =
+          new RedisClusterConfiguration()
+              .clusterNode(settings.getHost(), Integer.parseInt(settings.getPort()));
+      clusterConfig.setUsername(settings.getUsername());
+      clusterConfig.setPassword(RedisPassword.of(settings.getPassword()));
+      return new LettuceConnectionFactory(clusterConfig, clientConfigBuilder.build());
+    }
+
+    RedisStandaloneConfiguration standaloneConfig = new RedisStandaloneConfiguration();
+    standaloneConfig.setHostName(settings.getHost());
+    standaloneConfig.setPort(Integer.parseInt(settings.getPort()));
+    standaloneConfig.setUsername(settings.getUsername());
+    standaloneConfig.setPassword(RedisPassword.of(settings.getPassword()));
+    return new LettuceConnectionFactory(standaloneConfig, clientConfigBuilder.build());
   }
 
   @Bean
@@ -69,12 +81,6 @@ public class ReactiveCacheFactory {
     }
     if (StringUtils.isBlank(settings.getPort())) {
       throw new ConfigurationException("Cache connection [port] is not defined");
-    }
-    if (StringUtils.isBlank(settings.getUsername())) {
-      throw new ConfigurationException("Cache connection [username] is not defined");
-    }
-    if (StringUtils.isBlank(settings.getPassword())) {
-      throw new ConfigurationException("Cache connection [password] is not defined");
     }
   }
 }

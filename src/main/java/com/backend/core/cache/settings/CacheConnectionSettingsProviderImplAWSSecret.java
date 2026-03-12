@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Optional;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
@@ -23,10 +24,11 @@ import software.amazon.awssdk.services.secretsmanager.model.InvalidRequestExcept
 import software.amazon.awssdk.services.secretsmanager.model.ResourceNotFoundException;
 
 @Component("awsSecretsCacheConnectionSettingsProvider")
+@ConditionalOnProperty(name = "AWS_REGION")
 public class CacheConnectionSettingsProviderImplAWSSecret
     implements CacheConnectionSettingsProvider {
   private static final String AWS_CACHE_SECRET_NAME_PARAM = "AWS_CACHE_SECRET_NAME";
-  private static final String AWS_CACHE_SECRET_REGION_PARAM = "AWS_CACHE_SECRET_REGION";
+  private static final String AWS_REGION = "AWS_REGION";
 
   private final Environment environment;
   private final SecretsManagerClient secretsManagerClient;
@@ -40,9 +42,7 @@ public class CacheConnectionSettingsProviderImplAWSSecret
   }
 
   private SecretsManagerClient initializeSecretsManagerClient() {
-    String region =
-        assertRequiredEnvironmentParam(
-            AWS_CACHE_SECRET_REGION_PARAM, "AWS Region for Cache Secret is not defined");
+    String region = assertRequiredEnvironmentParam(AWS_REGION, "AWS Region is not defined");
     return SecretsManagerClient.builder().region(Region.of(region)).build();
   }
 
