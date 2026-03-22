@@ -93,10 +93,10 @@ spotless {
     }
     java {
         removeUnusedImports()
-        googleJavaFormat('1.15.0').reflowLongStrings().reorderImports(false)
+        googleJavaFormat('1.15.0').reorderImports(false).skipJavadocFormatting()
         indentWithSpaces(2)
         trimTrailingWhitespace()
-        importOrder( '\\#', 'java.' , 'org.', 'com.')
+        importOrder('\\#', 'java.', 'org.', 'com.')
         endWithNewline()
         toggleOffOn()
     }

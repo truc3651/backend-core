@@ -2,20 +2,18 @@ package com.backend.core.security;
 
 import java.util.Collections;
 import java.util.Objects;
-import java.util.Set;
 
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.stereotype.Component;
-import org.springframework.util.AntPathMatcher;
-import org.springframework.util.CollectionUtils;
+import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.reactive.result.method.annotation.RequestMappingHandlerMapping;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 
+import com.backend.core.annotations.Anonymous;
 import com.backend.core.dtos.ValidateTokenRequestDto;
 
 import lombok.RequiredArgsConstructor;
@@ -27,17 +25,25 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class JwtTokenAuthenticationFilter implements WebFilter {
   private static final String BEARER = "Bearer ";
-  private final SecuritySettings securitySettings;
+  private static final String ACTUATOR_ENDPOINT = "/actuator";
+  private static final String HEALTH_ENDPOINT = "/health";
   private final UserClient userClient;
   private final CustomAuthenticationEntryPoint authenticationEntryPoint;
-  private final AntPathMatcher pathMatcher = new AntPathMatcher();
+  private final RequestMappingHandlerMapping handlerMapping;
 
   @Override
   public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
-    if (shouldNotFilter(exchange.getRequest())) {
+    if (isActuatorRequest(exchange)) {
       return chain.filter(exchange);
     }
 
+    return isAnonymous(exchange)
+        .filter(Boolean.TRUE::equals)
+        .flatMap(ignored -> chain.filter(exchange))
+        .switchIfEmpty(authenticate(exchange, chain));
+  }
+
+  private Mono<Void> authenticate(ServerWebExchange exchange, WebFilterChain chain) {
     String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
     if (Objects.isNull(authHeader) || !authHeader.startsWith(BEARER)) {
       return chain.filter(exchange);
@@ -70,27 +76,21 @@ public class JwtTokenAuthenticationFilter implements WebFilter {
             });
   }
 
-  private boolean shouldNotFilter(ServerHttpRequest request) {
-    Set<SecuritySettings.OpenPath> openPaths = securitySettings.getOpenPaths();
-    if (CollectionUtils.isEmpty(openPaths)) {
-      return false;
-    }
+  private Mono<Boolean> isAnonymous(ServerWebExchange exchange) {
+    return handlerMapping
+        .getHandler(exchange)
+        .ofType(HandlerMethod.class)
+        .map(this::hasAnonymousAnnotation)
+        .defaultIfEmpty(false);
+  }
 
-    String requestPath = request.getURI().getPath();
-    HttpMethod requestMethod = request.getMethod();
+  private boolean hasAnonymousAnnotation(HandlerMethod handlerMethod) {
+    return handlerMethod.hasMethodAnnotation(Anonymous.class)
+        || handlerMethod.getBeanType().isAnnotationPresent(Anonymous.class);
+  }
 
-    return openPaths.stream()
-        .anyMatch(
-            openPath -> {
-              if (CollectionUtils.isEmpty(openPath.getMethods())) {
-                return pathMatcher.match(openPath.getPattern(), requestPath);
-              }
-
-              return openPath.getMethods().stream()
-                  .anyMatch(
-                      method ->
-                          method.equals(requestMethod)
-                              && pathMatcher.match(openPath.getPattern(), requestPath));
-            });
+  private boolean isActuatorRequest(ServerWebExchange exchange) {
+    String path = exchange.getRequest().getURI().getPath();
+    return path.startsWith(ACTUATOR_ENDPOINT) || path.startsWith(HEALTH_ENDPOINT);
   }
 }
