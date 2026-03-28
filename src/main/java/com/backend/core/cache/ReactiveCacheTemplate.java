@@ -33,11 +33,6 @@ public class ReactiveCacheTemplate<T> {
    Layer 3 — Probabilistic early refresh (the maybeEarlyRefresh / shouldEarlyRefresh methods):
        Refreshes the cache before it expires, so the stampede never even gets a chance to happen.
   */
-
-  public Mono<T> get(Long id, Function<Long, Mono<T>> dbFallback) {
-    return get(String.valueOf(id), key -> dbFallback.apply(Long.valueOf(key)));
-  }
-
   public Mono<T> get(String id, Function<String, Mono<T>> dbFallback) {
     String key = getKey(id);
     return redis
@@ -99,20 +94,12 @@ public class ReactiveCacheTemplate<T> {
             });
   }
 
-  public Mono<Boolean> put(Long id, T entity) {
-    return put(String.valueOf(id), entity);
-  }
-
   public Mono<Boolean> put(String id, T entity) {
     String key = getKey(id);
     return serialize(entity)
         .flatMap(json -> redis.opsForValue().set(key, json, jitteredTtl()))
         .doOnError(e -> log.warn("Cache put failed for key={}", key, e))
         .onErrorResume(e -> Mono.just(false));
-  }
-
-  public Mono<Void> evict(Long id) {
-    return evict(String.valueOf(id));
   }
 
   public Mono<Void> evict(String id) {

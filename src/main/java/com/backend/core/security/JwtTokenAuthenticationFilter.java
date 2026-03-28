@@ -3,6 +3,7 @@ package com.backend.core.security;
 import java.util.Collections;
 import java.util.Objects;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
@@ -16,13 +17,11 @@ import org.springframework.web.server.WebFilterChain;
 import com.backend.core.annotations.Anonymous;
 import com.backend.core.dtos.ValidateTokenRequestDto;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class JwtTokenAuthenticationFilter implements WebFilter {
   private static final String BEARER = "Bearer ";
   private static final String ACTUATOR_ENDPOINT = "/actuator";
@@ -31,6 +30,15 @@ public class JwtTokenAuthenticationFilter implements WebFilter {
   private final CustomAuthenticationEntryPoint authenticationEntryPoint;
   private final RequestMappingHandlerMapping handlerMapping;
 
+  public JwtTokenAuthenticationFilter(
+      UserClient userClient,
+      CustomAuthenticationEntryPoint authenticationEntryPoint,
+      @Qualifier("requestMappingHandlerMapping") RequestMappingHandlerMapping handlerMapping) {
+    this.userClient = userClient;
+    this.authenticationEntryPoint = authenticationEntryPoint;
+    this.handlerMapping = handlerMapping;
+  }
+
   @Override
   public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
     if (isActuatorRequest(exchange)) {
@@ -38,9 +46,13 @@ public class JwtTokenAuthenticationFilter implements WebFilter {
     }
 
     return isAnonymous(exchange)
-        .filter(Boolean.TRUE::equals)
-        .flatMap(ignored -> chain.filter(exchange))
-        .switchIfEmpty(authenticate(exchange, chain));
+        .flatMap(
+            isAnonymous -> {
+              if (Boolean.TRUE.equals(isAnonymous)) {
+                return chain.filter(exchange);
+              }
+              return authenticate(exchange, chain);
+            });
   }
 
   private Mono<Void> authenticate(ServerWebExchange exchange, WebFilterChain chain) {

@@ -15,7 +15,7 @@ public class UserClient {
 
   public UserClient(
       WebClient.Builder webClientBuilder,
-      @Value("${services.users-management.url}") String usersManagementUrl) {
+      @Value("${services.users-management.url:http://localhost:8090}") String usersManagementUrl) {
     this.webClient = webClientBuilder.baseUrl(usersManagementUrl).build();
   }
 
